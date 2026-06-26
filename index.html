@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <meta name="theme-color" content="#0284c7" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Catálogo TPDI" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>Catálogo TPDI</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f0f6ff;
+      --surface: #ffffff;
+      --surface2: #e8f1fb;
+      --accent: #0284c7;
+      --accent-light: #0ea5e9;
+      --accent-bg: #e0f2fe;
+      --text: #0c1a2e;
+      --text-muted: #5b7899;
+      --border: rgba(0,0,0,0.08);
+      --shadow: 0 2px 12px rgba(2,132,199,0.10);
+      --radius: 14px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      overscroll-behavior: none;
+    }
+
+    .header {
+      background: var(--accent);
+      color: white;
+      padding: env(safe-area-inset-top, 0) 0 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+    }
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-logo img {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: white;
+    }
+    .header-logo-text h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      line-height: 1.2;
+    }
+    .header-count {
+      font-size: 12px;
+      opacity: 0.75;
+      margin-top: 1px;
+    }
+    .btn-add {
+      background: rgba(255,255,255,0.18);
+      border: 1.5px solid rgba(255,255,255,0.35);
+      color: white;
+      border-radius: 50px;
+      padding: 9px 18px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-add:active { background: rgba(255,255,255,0.28); }
+    .btn-add svg { width: 16px; height: 16px; }
+
+    .search-bar {
+      background: var(--accent);
+      padding: 0 16px 14px;
+    }
+    .search-input {
+      width: 100%;
+      background: rgba(255,255,255,0.15);
+      border: 1.5px solid rgba(255,255,255,0.25);
+      border-radius: 10px;
+      padding: 10px 14px 10px 38px;
+      color: white;
+      font-size: 15px;
+      outline: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='rgba(255,255,255,0.6)' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: 12px center;
+    }
+    .search-input::placeholder { color: rgba(255,255,255,0.5); }
+    .search-input:focus { border-color: rgba(255,255,255,0.5); }
+
+    .main { padding: 16px; padding-bottom: calc(env(safe-area-inset-bottom, 0) + 16px); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.12s;
+    }
+    .card:active { transform: scale(0.97); }
+    .card-img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: contain;
+      display: block;
+      background: var(--surface2);
+    }
+    .card-img-placeholder {
+      width: 100%;
+      aspect-ratio: 1;
+      background: var(--surface2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card-img-placeholder svg { width: 40px; height: 40px; opacity: 0.25; }
+    .card-body { padding: 10px 12px 12px; }
+    .card-name {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.35;
+      color: var(--text);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 64px 24px;
+      color: var(--text-muted);
+    }
+    .empty svg { width: 64px; height: 64px; opacity: 0.2; margin-bottom: 16px; }
+    .empty h2 { font-size: 18px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
+    .empty p { font-size: 14px; line-height: 1.6; }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 200;
+      display: flex;
+      align-items: flex-end;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .overlay.open { opacity: 1; pointer-events: all; }
+
+    .sheet {
+      background: var(--surface);
+      border-radius: 20px 20px 0 0;
+      width: 100%;
+      max-height: 92dvh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: env(safe-area-inset-bottom, 20px);
+      transform: translateY(100%);
+      transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .overlay.open .sheet { transform: translateY(0); }
+
+    .sheet-handle {
+      width: 36px; height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 12px auto 4px;
+    }
+    .sheet-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sheet-title { font-size: 17px; font-weight: 600; }
+    .btn-close {
+      background: var(--surface2);
+      border: none;
+      border-radius: 50%;
+      width: 30px; height: 30px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      color: var(--text-muted);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-close svg { width: 14px; height: 14px; }
+
+    .form-body { padding: 20px; }
+
+    /* ── UPLOAD ZONE — sin onclick, solo el label envuelve el input ── */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      aspect-ratio: 4/3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background: var(--surface2);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 16px;
+      -webkit-tap-highlight-color: transparent;
+      transition: border-color 0.15s;
+    }
+    .upload-zone:active { border-color: var(--accent-light); }
+    .upload-zone svg { width: 36px; height: 36px; color: var(--text-muted); margin-bottom: 10px; pointer-events: none; }
+    .upload-zone span { font-size: 14px; color: var(--text-muted); pointer-events: none; }
+    /* El input ocupa toda la zona, es el único trigger */
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      font-size: 0;
+    }
+    .upload-zone .preview-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: var(--surface2);
+      display: none;
+      pointer-events: none;
+    }
+
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 13px; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; }
+    .field input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 15px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+      font-family: inherit;
+    }
+    .field input:focus { border-color: var(--accent-light); }
+
+    .btn-save {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 15px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 4px;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s;
+    }
+    .btn-save:active { background: var(--accent-light); }
+
+    .detail-img-wrap {
+      position: relative;
+      background: #111;
+      cursor: pointer;
+    }
+    .detail-img {
+      width: 100%;
+      max-height: 60dvh;
+      object-fit: contain;
+      display: block;
+    }
+    .detail-img-placeholder {
+      width: 100%;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface2);
+    }
+    .detail-img-placeholder svg { width: 72px; height: 72px; opacity: 0.18; }
+    .zoom-hint {
+      position: absolute;
+      bottom: 10px; right: 10px;
+      background: rgba(0,0,0,0.5);
+      color: white;
+      font-size: 11px;
+      padding: 4px 9px;
+      border-radius: 20px;
+      pointer-events: none;
+    }
+    .detail-body { padding: 20px; }
+    .detail-name { font-size: 22px; font-weight: 600; line-height: 1.3; margin-bottom: 20px; }
+    .detail-actions { display: flex; gap: 10px; }
+    .btn-edit {
+      flex: 1;
+      background: var(--accent-bg); color: var(--accent);
+      border: none; border-radius: 10px; padding: 13px;
+      font-size: 15px; font-weight: 500; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-delete {
+      flex: 1;
+      background: #fef2f2; color: #dc2626;
+      border: none; border-radius: 10px; padding: 13px;
+      font-size: 15px; font-weight: 500; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ── FULLSCREEN VIEWER ── */
+    .viewer {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      touch-action: none;
+      overflow: hidden;
+    }
+    .viewer.open { opacity: 1; pointer-events: all; }
+    .viewer-img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+      transform-origin: center center;
+      will-change: transform;
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
+    }
+    .viewer-close {
+      position: absolute;
+      top: calc(env(safe-area-inset-top, 0px) + 14px);
+      right: 16px;
+      background: rgba(255,255,255,0.15);
+      border: 1.5px solid rgba(255,255,255,0.3);
+      color: white;
+      border-radius: 50%;
+      width: 38px; height: 38px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      z-index: 10;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .viewer-close svg { width: 18px; height: 18px; }
+    .viewer-label {
+      position: absolute;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+      left: 0; right: 0;
+      text-align: center;
+      color: rgba(255,255,255,0.8);
+      font-size: 14px; font-weight: 500;
+      pointer-events: none;
+      padding: 0 24px;
+    }
+
+    .confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s;
+    }
+    .confirm-overlay.open { opacity: 1; pointer-events: all; }
+    .confirm-box {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%; max-width: 300px;
+      text-align: center;
+    }
+    .confirm-box h3 { font-size: 17px; font-weight: 600; margin-bottom: 8px; }
+    .confirm-box p { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; }
+    .confirm-btns { display: flex; gap: 10px; }
+    .confirm-btns button { flex: 1; padding: 12px; border: none; border-radius: 10px; font-size: 15px; font-weight: 500; cursor: pointer; }
+    .btn-cancel-confirm { background: var(--surface2); color: var(--text); }
+    .btn-confirm-del { background: #dc2626; color: white; }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="header-logo">
+      <img src="icon-192.png" alt="Logo TPDI" />
+      <div class="header-logo-text">
+        <h1>Catálogo TPDI</h1>
+        <div class="header-count" id="headerCount">0 productos</div>
+      </div>
+    </div>
+    <button class="btn-add" onclick="openAdd()">
+      <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      Agregar
+    </button>
+  </div>
+  <div class="search-bar">
+    <input class="search-input" type="search" placeholder="Buscar producto…" id="searchInput" oninput="renderGrid()" />
+  </div>
+</header>
+
+<main class="main">
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="emptyState" style="display:none">
+    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+      <rect x="3" y="3" width="18" height="18" rx="3"/>
+      <path d="M3 9h18M9 21V9"/>
+    </svg>
+    <h2>Tu catálogo está vacío</h2>
+    <p>Toca "Agregar" para añadir tu primer producto con foto y nombre.</p>
+  </div>
+</main>
+
+<!-- ADD / EDIT SHEET -->
+<div class="overlay" id="addOverlay" onclick="handleOverlayClick(event,'addOverlay')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span class="sheet-title" id="formTitle">Nuevo producto</span>
+      <button class="btn-close" onclick="closeAdd()">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="form-body">
+      <!-- Upload zone: solo el <input> dispara el selector, sin onclick en el div -->
+      <div class="upload-zone" id="uploadZone">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/>
+        </svg>
+        <span id="uploadLabel">Toca para elegir foto</span>
+        <img class="preview-img" id="previewImg" alt="Vista previa" />
+        <input type="file" accept="image/*" id="fileInput" onchange="handleFile(event)" />
+      </div>
+      <div class="field">
+        <label for="nameInput">Nombre del producto</label>
+        <input type="text" id="nameInput" placeholder="Ej. Camisa azul talla M" maxlength="80" />
+      </div>
+      <button class="btn-save" onclick="saveProduct()">Guardar producto</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL SHEET -->
+<div class="overlay" id="detailOverlay" onclick="handleOverlayClick(event,'detailOverlay')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span class="sheet-title">Detalle</span>
+      <button class="btn-close" onclick="closeDetail()">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="detail-img-wrap" id="detailImgWrap"></div>
+    <div class="detail-body">
+      <div class="detail-name" id="detailName"></div>
+      <div class="detail-actions">
+        <button class="btn-edit" onclick="editCurrent()">Editar</button>
+        <button class="btn-delete" onclick="confirmDelete()">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FULLSCREEN VIEWER -->
+<div class="viewer" id="viewer">
+  <button class="viewer-close" onclick="closeViewer()">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+  <img class="viewer-img" id="viewerImg" alt="" />
+  <div class="viewer-label" id="viewerLabel"></div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <h3>Eliminar producto</h3>
+    <p>¿Seguro que quieres eliminar este producto? Esta acción no se puede deshacer.</p>
+    <div class="confirm-btns">
+      <button class="btn-cancel-confirm" onclick="closeConfirm()">Cancelar</button>
+      <button class="btn-confirm-del" onclick="deleteConfirmed()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ─── STATE ─── */
+  let products = [];
+  let editingId = null;
+  let viewingId = null;
+  let pendingImageData = null;
+  const DB_KEY = 'catalogo_tpdi_products';
+
+  /* ─── STORAGE ─── */
+  function save() {
+    try { localStorage.setItem(DB_KEY, JSON.stringify(products)); } catch(e) {}
+  }
+  function load() {
+    try {
+      const raw = localStorage.getItem(DB_KEY);
+      if (raw) products = JSON.parse(raw);
+    } catch(e) { products = []; }
+  }
+
+  /* ─── RENDER ─── */
+  function renderGrid() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const grid = document.getElementById('grid');
+    const empty = document.getElementById('emptyState');
+    const count = document.getElementById('headerCount');
+    const filtered = query ? products.filter(p => p.name.toLowerCase().includes(query)) : products;
+    count.textContent = products.length === 1 ? '1 producto' : `${products.length} productos`;
+    if (products.length === 0) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    grid.innerHTML = filtered.map(p => `
+      <div class="card" onclick="openDetail('${p.id}')">
+        ${p.image
+          ? `<img class="card-img" src="${p.image}" alt="${escHtml(p.name)}" loading="lazy" />`
+          : `<div class="card-img-placeholder"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div>`}
+        <div class="card-body"><div class="card-name">${escHtml(p.name)}</div></div>
+      </div>`).join('');
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ─── ADD / EDIT ─── */
+  function openAdd() {
+    editingId = null;
+    pendingImageData = null;
+    document.getElementById('formTitle').textContent = 'Nuevo producto';
+    document.getElementById('nameInput').value = '';
+    resetUploadZone();
+    document.getElementById('addOverlay').classList.add('open');
+    setTimeout(() => document.getElementById('nameInput').focus(), 300);
+  }
+
+  function resetUploadZone() {
+    const preview = document.getElementById('previewImg');
+    preview.style.display = 'none';
+    preview.src = '';
+    document.getElementById('uploadLabel').style.display = '';
+    document.getElementById('uploadZone').querySelector('svg').style.display = '';
+    // Reset file input safely
+    const fi = document.getElementById('fileInput');
+    fi.value = '';
+  }
+
+  function closeAdd() {
+    document.getElementById('addOverlay').classList.remove('open');
+  }
+
+  function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      pendingImageData = ev.target.result;
+      const preview = document.getElementById('previewImg');
+      preview.src = pendingImageData;
+      preview.style.display = 'block';
+      document.getElementById('uploadLabel').style.display = 'none';
+      document.getElementById('uploadZone').querySelector('svg').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function saveProduct() {
+    const name = document.getElementById('nameInput').value.trim();
+    if (!name) { document.getElementById('nameInput').focus(); return; }
+    if (editingId) {
+      const idx = products.findIndex(p => p.id === editingId);
+      if (idx !== -1) {
+        products[idx].name = name;
+        if (pendingImageData) products[idx].image = pendingImageData;
+      }
+    } else {
+      products.unshift({ id: Date.now().toString(), name, image: pendingImageData || null, createdAt: Date.now() });
+    }
+    save(); renderGrid(); closeAdd();
+  }
+
+  /* ─── DETAIL ─── */
+  function openDetail(id) {
+    viewingId = id;
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+    const imgWrap = document.getElementById('detailImgWrap');
+    if (p.image) {
+      imgWrap.innerHTML = `
+        <img class="detail-img" src="${p.image}" alt="${escHtml(p.name)}" onclick="openViewer('${p.id}')" />
+        <div class="zoom-hint">Toca para ampliar</div>`;
+    } else {
+      imgWrap.innerHTML = `<div class="detail-img-placeholder"><svg fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></div>`;
+    }
+    document.getElementById('detailName').textContent = p.name;
+    document.getElementById('detailOverlay').classList.add('open');
+  }
+
+  function closeDetail() {
+    document.getElementById('detailOverlay').classList.remove('open');
+  }
+
+  function editCurrent() {
+    const p = products.find(x => x.id === viewingId);
+    if (!p) return;
+    closeDetail();
+    setTimeout(() => {
+      editingId = p.id;
+      pendingImageData = null;
+      document.getElementById('formTitle').textContent = 'Editar producto';
+      document.getElementById('nameInput').value = p.name;
+      resetUploadZone();
+      if (p.image) {
+        const preview = document.getElementById('previewImg');
+        preview.src = p.image;
+        preview.style.display = 'block';
+        document.getElementById('uploadLabel').style.display = 'none';
+        document.getElementById('uploadZone').querySelector('svg').style.display = 'none';
+      }
+      document.getElementById('addOverlay').classList.add('open');
+    }, 250);
+  }
+
+  /* ─── FULLSCREEN VIEWER WITH PINCH ZOOM ─── */
+  let vScale = 1, vTransX = 0, vTransY = 0;
+  let vLastDist = 0, vLastMidX = 0, vLastMidY = 0;
+  let vPointers = [], vIsPinching = false;
+  let vDragStartX = 0, vDragStartY = 0;
+
+  function openViewer(id) {
+    const p = products.find(x => x.id === id);
+    if (!p || !p.image) return;
+    document.getElementById('viewerImg').src = p.image;
+    document.getElementById('viewerLabel').textContent = p.name;
+    vScale = 1; vTransX = 0; vTransY = 0;
+    applyTransform();
+    document.getElementById('viewer').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeViewer() {
+    document.getElementById('viewer').classList.remove('open');
+    document.body.style.overflow = '';
+    vPointers = []; vScale = 1; vTransX = 0; vTransY = 0;
+  }
+
+  function applyTransform() {
+    document.getElementById('viewerImg').style.transform =
+      `translate(${vTransX}px,${vTransY}px) scale(${vScale})`;
+  }
+
+  function clampTranslation() {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const maxX = Math.max(0, (vw * vScale - vw) / 2);
+    const maxY = Math.max(0, (vh * vScale - vh) / 2);
+    vTransX = Math.max(-maxX, Math.min(maxX, vTransX));
+    vTransY = Math.max(-maxY, Math.min(maxY, vTransY));
+  }
+
+  const viewer = document.getElementById('viewer');
+
+  viewer.addEventListener('pointerdown', e => {
+    vPointers.push(e);
+    if (vPointers.length === 1) {
+      vDragStartX = e.clientX - vTransX;
+      vDragStartY = e.clientY - vTransY;
+      vIsPinching = false;
+    } else if (vPointers.length === 2) {
+      vIsPinching = true;
+      const dx = vPointers[0].clientX - vPointers[1].clientX;
+      const dy = vPointers[0].clientY - vPointers[1].clientY;
+      vLastDist = Math.hypot(dx, dy);
+      vLastMidX = (vPointers[0].clientX + vPointers[1].clientX) / 2;
+      vLastMidY = (vPointers[0].clientY + vPointers[1].clientY) / 2;
+    }
+  }, { passive: true });
+
+  viewer.addEventListener('pointermove', e => {
+    const idx = vPointers.findIndex(p => p.pointerId === e.pointerId);
+    if (idx !== -1) vPointers[idx] = e;
+    if (vPointers.length === 2 && vIsPinching) {
+      const dx = vPointers[0].clientX - vPointers[1].clientX;
+      const dy = vPointers[0].clientY - vPointers[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      const midX = (vPointers[0].clientX + vPointers[1].clientX) / 2;
+      const midY = (vPointers[0].clientY + vPointers[1].clientY) / 2;
+      const ratio = dist / vLastDist;
+      const newScale = Math.max(1, Math.min(5, vScale * ratio));
+      vTransX = midX - (midX - vTransX) * (newScale / vScale) + (midX - vLastMidX);
+      vTransY = midY - (midY - vTransY) * (newScale / vScale) + (midY - vLastMidY);
+      vScale = newScale;
+      vLastDist = dist; vLastMidX = midX; vLastMidY = midY;
+      clampTranslation(); applyTransform();
+    } else if (vPointers.length === 1 && !vIsPinching && vScale > 1) {
+      vTransX = e.clientX - vDragStartX;
+      vTransY = e.clientY - vDragStartY;
+      clampTranslation(); applyTransform();
+    }
+  }, { passive: true });
+
+  function onPointerUp(e) {
+    vPointers = vPointers.filter(p => p.pointerId !== e.pointerId);
+    if (vPointers.length < 2) vIsPinching = false;
+    if (vPointers.length === 1) {
+      vDragStartX = vPointers[0].clientX - vTransX;
+      vDragStartY = vPointers[0].clientY - vTransY;
+    }
+    if (vPointers.length === 0 && vScale < 1.05) {
+      vScale = 1; vTransX = 0; vTransY = 0; applyTransform();
+    }
+  }
+  viewer.addEventListener('pointerup', onPointerUp, { passive: true });
+  viewer.addEventListener('pointercancel', onPointerUp, { passive: true });
+
+  let lastTap = 0;
+  viewer.addEventListener('click', e => {
+    if (e.target.classList.contains('viewer-close')) return;
+    const now = Date.now();
+    if (now - lastTap < 300) {
+      if (vScale > 1.5) { vScale = 1; vTransX = 0; vTransY = 0; }
+      else {
+        vScale = 2.5;
+        vTransX = (window.innerWidth / 2 - e.clientX) * 1.5;
+        vTransY = (window.innerHeight / 2 - e.clientY) * 1.5;
+        clampTranslation();
+      }
+      applyTransform();
+    }
+    lastTap = now;
+  });
+
+  /* ─── DELETE ─── */
+  function confirmDelete() { document.getElementById('confirmOverlay').classList.add('open'); }
+  function closeConfirm() { document.getElementById('confirmOverlay').classList.remove('open'); }
+  function deleteConfirmed() {
+    products = products.filter(p => p.id !== viewingId);
+    save(); renderGrid(); closeConfirm(); closeDetail();
+  }
+
+  function handleOverlayClick(e, id) {
+    if (e.target.id === id) document.getElementById(id).classList.remove('open');
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('addOverlay').classList.contains('open')) saveProduct();
+    if (e.key === 'Escape') { closeAdd(); closeDetail(); closeConfirm(); closeViewer(); }
+  });
+
+  load();
+  renderGrid();
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+</script>
+</body>
+</html>
