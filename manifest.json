@@ -1,0 +1,25 @@
+{
+  "name": "Catálogo TPDI",
+  "short_name": "TPDI",
+  "description": "Catálogo virtual de productos TPDI",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f0f6ff",
+  "theme_color": "#0284c7",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
